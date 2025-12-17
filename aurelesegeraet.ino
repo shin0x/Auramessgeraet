@@ -86,7 +86,7 @@ void loop() {
     current_motor_speed += 300; 
     control_motor(true, current_motor_speed);
     Serial.print("Running motor with speed: ");
-    Serial.println(motorpower);
+    Serial.println(current_motor_speed);
 
 
     // testsound - mag sehr aetzend klingen, gerne aendern
