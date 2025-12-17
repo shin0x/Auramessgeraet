@@ -103,6 +103,7 @@ void loop() {
     clear_next_led();
     current_motor_speed = 0; 
     control_motor(false, current_motor_speed);
+    digitalWrite(SPEAKER_PIN, 0);
     delay(DEFAULT_DELAY);
   }
 }
