@@ -84,6 +84,8 @@ void loop() {
     // finger is on sensor
     power_next_led();
     current_motor_speed += 300; 
+    if (current_motor_speed > 3800)
+      current_motor_speed = 500;
     control_motor(true, current_motor_speed);
     Serial.print("Running motor with speed: ");
     Serial.println(current_motor_speed);
