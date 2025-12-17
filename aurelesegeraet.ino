@@ -8,6 +8,7 @@ const int SPEAKER_PIN = 1;
 const int DEFAULT_DELAY = 400;
 
 int current_led_pin_ctr = 0;
+int current_motor_speed = 0;
 
 void clear_next_led(){
   if(current_led_pin_ctr < 0)
@@ -82,16 +83,24 @@ void loop() {
   if(analogRead(HUMIDITY_SENSOR_PIN) > 3000){
     // finger is on sensor
     power_next_led();
-    int motorpower = (int)random(analogRead(MOTOR_PIN)-100, analogRead(MOTOR_PIN)+100);
-    
-    //control_motor(true, motorpower);
-    //Serial.print("Running motor with speed ");
-    //Serial.println(motorpower);
+    current_motor_speed += 300; 
+    control_motor(true, current_motor_speed);
+    Serial.print("Running motor with speed: ");
+    Serial.println(motorpower);
+
+
+    // testsound - mag sehr aetzend klingen, gerne aendern
+    if(!digitalRead(SPEAKER_PIN))
+      analogWrite(SPEAKER_PIN, (int)random(50, 4000));
+    else
+      digitalWrite(SPEAKER_PIN, 0);
     delay(DEFAULT_DELAY);
   }
   // if finger is no longer on sensor, turn leds off
   else{
     clear_next_led();
+    current_motor_speed = 0; 
+    control_motor(false, current_motor_speed);
     delay(DEFAULT_DELAY);
   }
 }
