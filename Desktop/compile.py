@@ -17,8 +17,8 @@ def compile_doc(name, color_one, color_two):
     latex_code = f"""\ErstelleAuraDokument{{{name}}}{{\\today}}{{{color_one}}}{{{color_two}}}"""
     with open(latex_document, 'w') as file:
         file.write(latex_code)
-    command = "pdflatex -output-directory=.. -jobname=Auramessung main.tex"
-    os.system(f"cd tex && {command} && cd ..")
+    command = "pdflatex -output-directory=../.. -jobname=Auramessung main.tex"
+    os.system(f"cd tex && {command} && cd .. && cd ..")
 
 def capture_image():
 
@@ -56,8 +56,8 @@ def get_random_aura_color():
     return aura_color_one, aura_color_two
 
 if __name__ == "__main__":
-    #capture_image()
-    #remove_background("captured_image.png", "tex/face.png")
+    capture_image()
+    remove_background("captured_image.png", "tex/face.png")
     aura_colors = get_random_aura_color()
-    compile_doc("test", aura_colors[0], aura_colors[1])
-    send_mail("conference@borjs.de", "Deine Auramessung", "Hallo! Im Anhang kannst du deine Auramessung einsehen! Viel Spaß mit diesen Wissenschaftlich fundierten Daten!", files=["Auramessung.pdf"])
+    compile_doc("Jonah", aura_colors[0], aura_colors[1])
+    send_mail("conference@borjs.de", "Deine Auramessung", "Hallo! Im Anhang kannst du deine Auramessung einsehen! Viel Spaß mit diesen Wissenschaftlich fundierten Daten!", files=["../Auramessung.pdf"])
