@@ -1,0 +1,63 @@
+import os
+import random
+from pathlib import Path
+from rembg import remove
+from PIL import Image
+from cv2 import VideoCapture, imshow, imwrite, waitKey, destroyWindow
+from send_mail import send_mail
+import onnxruntime
+
+BASE = Path("tex/main.tex")
+AURAFARBEN = ["Gelb", "Gold", "Schwarz", "Rosa", "Grün", "Blau", "Rot"]
+
+
+def compile_doc(name, color_one, color_two):
+    latex_document = './tex/vars.tex'
+
+    latex_code = f"""\ErstelleAuraDokument{{{name}}}{{\\today}}{{{color_one}}}{{{color_two}}}"""
+    with open(latex_document, 'w') as file:
+        file.write(latex_code)
+    command = "pdflatex -output-directory=.. -jobname=Auramessung main.tex"
+    os.system(f"cd tex && {command} && cd ..")
+
+def capture_image():
+
+    # Initialize webcam (0 = default camera)
+    cam = VideoCapture(0)
+
+    # Capture one frame
+    ret, frame = cam.read()
+
+    if ret:
+        #imshow("Captured", frame)
+        imwrite("captured_image.png", frame)
+        #waitKey(0)
+        #destroyWindow("Captured")
+    else:
+        print("Failed to capture image.")
+
+    cam.release()
+
+def remove_background(input_file_path, output_file_path):
+    # Processing the image
+    input = Image.open(input_file_path)
+
+    # Removing the background from the given Image
+    output = remove(input)
+
+    #Saving the image in the given path
+    output.save(output_file_path)
+
+def get_random_aura_color():
+    aura_color_one = random.choice(AURAFARBEN)
+    aura_color_two = random.choice(AURAFARBEN)
+    while aura_color_one == aura_color_two:
+        aura_color_two = random.choice(AURAFARBEN)
+    return aura_color_one, aura_color_two
+
+if __name__ == "__main__":
+    #capture_image()
+    #remove_background("captured_image.png", "tex/face.png")
+    aura_colors = get_random_aura_color()
+    compile_doc("test", aura_colors[0], aura_colors[1])
+    send_mail("conference@borjs.de", "Deine Auramessung", "Hallo! Im Anhang kannst du deine Auramessung einsehen! Viel Spaß mit diesen Wissenschaftlich fundierten Daten!", files=["Auramessung.pdf"])
