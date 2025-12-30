@@ -55,9 +55,21 @@ def get_random_aura_color():
         aura_color_two = random.choice(AURAFARBEN)
     return aura_color_one, aura_color_two
 
+def cleanup_fs():
+    # delete all pdfs and face.png
+    if os.path.isfile("tex/face.png"):
+        os.remove("tex/face.png")
+    if os.path.isfile("captured_image.png"):
+        os.remove("captured_image.png")
+
 if __name__ == "__main__":
+    cleanup_fs()
     capture_image()
     remove_background("captured_image.png", "tex/face.png")
     aura_colors = get_random_aura_color()
     compile_doc("Jonah", aura_colors[0], aura_colors[1])
-    send_mail("conference@borjs.de", "Deine Auramessung", "Hallo! Im Anhang kannst du deine Auramessung einsehen! Viel Spaß mit diesen Wissenschaftlich fundierten Daten!", files=["../Auramessung.pdf"])
+    try:
+        send_mail("conference@borjs.de", "Deine Auramessung", "Hallo! Im Anhang kannst du deine Auramessung einsehen! Viel Spaß mit diesen Wissenschaftlich fundierten Daten!", files=["../Auramessung.pdf"])
+    except:
+        print ("Sending the mail went wrong :c")
+    cleanup_fs() # second remove after script ran
