@@ -5,20 +5,28 @@ from rembg import remove
 from PIL import Image
 from cv2 import VideoCapture, imshow, imwrite, waitKey, destroyWindow
 from send_mail import send_mail
+import datetime
 import onnxruntime
 
 BASE = Path("tex/main.tex")
 AURAFARBEN = ["Gelb", "Gold", "Schwarz", "Rosa", "Grün", "Blau", "Rot"]
 
 
-def compile_doc(name, color_one, color_two):
+def compile_doc(name, color_one, color_two, send=False):
     latex_document = './tex/vars.tex'
 
     latex_code = f"""\ErstelleAuraDokument{{{name}}}{{\\today}}{{{color_one}}}{{{color_two}}}"""
     with open(latex_document, 'w') as file:
         file.write(latex_code)
-    command = "pdflatex -output-directory=../.. -jobname=Auramessung main.tex"
-    os.system(f"cd tex && {command} && cd .. && cd ..")
+
+    cur_timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+    command = f"pdflatex -output-directory=../Measurements -jobname={cur_timestamp}-{name} main.tex"
+    os.system(f"cd tex && {command}")
+    unnecessary_file_extensions = [".log", ".out", ".toc"]
+    for extension in unnecessary_file_extensions:
+        os.system(f"cd Measurements && pwd && mv *{extension} ./aux")
+    return f"{cur_timestamp}-{name}.pdf"
+
 
 def capture_image():
 
