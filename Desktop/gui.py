@@ -5,7 +5,8 @@ from tkinter import ttk, messagebox
 import cv2
 from PIL import Image, ImageTk
 
-from helper import compile_doc, get_random_aura_color, remove_background, cleanup_fs
+from Desktop.helper import wait_for_esp_measurement
+from helper import compile_doc, get_random_aura_color, remove_background, cleanup_fs, get_serial_ports
 from send_mail import send_mail
 
 BG_COLOR = "#0b0e1c"
@@ -28,6 +29,8 @@ class AuraGUI(tk.Tk):
 
         self.name_var = tk.StringVar()
         self.email_var = tk.StringVar()
+        self.serial_port_var = tk.StringVar()
+        self.serial_ports = []
         self.mail_enabled = tk.BooleanVar(value=True)
         self.use_picture = tk.BooleanVar(value=True)
         self.current_frame = None
@@ -35,6 +38,7 @@ class AuraGUI(tk.Tk):
         self._build_starfield()
         self._style_controls()
         self._build_chrome()
+        self._refresh_ports()
         self._build_form()
         self._build_camera_panel()
 
@@ -67,8 +71,18 @@ class AuraGUI(tk.Tk):
         tk.Frame(top, bg=BAR_COLOR, height=10).pack(fill=tk.X, side=tk.BOTTOM)
         tk.Label(top, text="AURAMESSUNG", bg=PANEL_COLOR, fg=TEXT_COLOR,
                  font=("Helvetica", 18, "bold")).pack(side=tk.LEFT, padx=16, pady=6)
-        tk.Label(top, text="OFFICIAL QUANTUM AURA MEASUREMENT", bg=PANEL_COLOR, fg=ALT_COLOR,
-                 font=("Helvetica", 11, "bold")).pack(side=tk.RIGHT, padx=16)
+        top_right = tk.Frame(top, bg=PANEL_COLOR)
+        top_right.pack(side=tk.RIGHT, padx=16, pady=6)
+        tk.Label(top_right, text="USB-Port:", bg=PANEL_COLOR, fg=ALT_COLOR,
+                 font=("Helvetica", 11, "bold")).grid(row=0, column=0, sticky="e")
+        self.port_combo = ttk.Combobox(top_right, textvariable=self.serial_port_var, width=18,
+                                       values=self.serial_ports,
+                                       state="readonly" if self.serial_ports else "disabled")
+        self.port_combo.grid(row=0, column=1, padx=8)
+        tk.Button(top_right, text="Refresh", command=self._refresh_ports, bg=BAR_COLOR, fg=TEXT_COLOR,
+                  activebackground=ALT_COLOR, activeforeground=BG_COLOR,
+                  relief=tk.FLAT, padx=8, pady=2).grid(row=0, column=2)
+        top_right.grid_columnconfigure(1, weight=1)
 
         left = tk.Frame(self, bg=PANEL_COLOR, width=40)
         left.pack(fill=tk.Y, side=tk.LEFT, padx=(12, 8), pady=(60, 16))
@@ -162,8 +176,14 @@ class AuraGUI(tk.Tk):
                                        bg=PANEL_COLOR, font=("Helvetica", 16, "bold"))
         self.after(30, self._update_frame)
 
+    def get_selected_port(self) -> str:
+        """Return the USB/serial port picked in the dropdown (empty string if nothing is selected)."""
+        return self.serial_port_var.get().strip()
+
+
     def on_shutter(self):
         self.shutter_button.configure(state=tk.DISABLED, text="Processing...")
+        # Access the currently selected USB port via self.get_selected_port() when talking to the device.
         threading.Thread(target=self._capture_and_compile, daemon=True).start()
 
     def _capture_and_compile(self):
@@ -180,14 +200,18 @@ class AuraGUI(tk.Tk):
                 remove_background("captured_image.png", "tex/face.png")
 
             color_one, color_two = get_random_aura_color()
-            filename = compile_doc(name, color_one, color_two)
+            device_con = wait_for_esp_measurement(self.get_selected_port())
+            if device_con == "error while measuring" or device_con == "connection to device failed":
+                print("Something went wrong while measuring, please retry")
+            elif device_con == "done":
+                filename = compile_doc(name, color_one, color_two)
 
-            if self.mail_enabled.get() and email:
-                send_mail(email, "Deine Auramessung",
-                          "Hallo! Im Anhang kannst du deine Auramessung einsehen!",
-                          files=[f"Measurements/{filename}"])
-            #self._notify(lambda: messagebox.showinfo("Fertig", "Auradokument erstellt."))
-            cleanup_fs()
+                if self.mail_enabled.get() and email:
+                    send_mail(email, "Deine Auramessung",
+                              "Hallo! Im Anhang kannst du deine Auramessung einsehen!",
+                              files=[f"Measurements/{filename}"])
+                #self._notify(lambda: messagebox.showinfo("Fertig", "Auradokument erstellt."))
+                cleanup_fs()
         except Exception as exc:
             self._notify(lambda: messagebox.showerror("Fehler", str(exc)))
         finally:
@@ -195,6 +219,22 @@ class AuraGUI(tk.Tk):
 
     def _notify(self, func):
         self.after(0, func)
+
+
+    def _refresh_ports(self):
+        ports = get_serial_ports()
+        self.serial_ports = ports
+        if ports:
+            if self.serial_port_var.get() not in ports:
+                self.serial_port_var.set(ports[0])
+        else:
+            self.serial_port_var.set("")
+
+        if hasattr(self, "port_combo"):
+            state = "readonly" if ports else "disabled"
+            self.port_combo.configure(values=ports, state=state)
+            if not ports:
+                self.port_combo.set("")
 
     def on_close(self):
         self.running = False

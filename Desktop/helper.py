@@ -6,11 +6,59 @@ from PIL import Image
 from cv2 import VideoCapture, imshow, imwrite, waitKey, destroyWindow
 from send_mail import send_mail
 import datetime
+import sys
+import glob
+import serial
+
 import onnxruntime
 
 BASE = Path("tex/main.tex")
 AURAFARBEN = ["Gelb", "Gold", "Schwarz", "Rosa", "Grün", "Blau", "Rot"]
 
+def get_serial_ports():
+    """ Lists serial port names
+
+        :raises EnvironmentError:
+            On unsupported or unknown platforms
+        :returns:
+            A list of the serial ports available on the system
+    """
+    if sys.platform.startswith('win'):
+        ports = ['COM%s' % (i + 1) for i in range(256)]
+    elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+        # this excludes your current terminal "/dev/tty"
+        ports = glob.glob('/dev/tty[A-Za-z]*')
+    elif sys.platform.startswith('darwin'):
+        ports = glob.glob('/dev/tty.*')
+    else:
+        raise EnvironmentError('Unsupported platform')
+
+    result = []
+    for port in ports:
+        try:
+            s = serial.Serial(port)
+            s.close()
+            result.append(port)
+        except (OSError, serial.SerialException):
+            pass
+    return result
+
+
+def wait_for_esp_measurement(port):
+    measure_finished = False
+    try:
+        ser = serial.Serial(port, 9600)
+        while True:
+            data = ser.readline().decode('ascii')
+            if data:
+                data = data.strip().rstrip("\n")
+                print(data)
+                if data == "finished":
+                    return "done"
+                else:
+                    return "error while measuring"
+    except:
+        return "connection to device failed"
 
 def compile_doc(name, color_one, color_two, send=False):
     latex_document = './tex/vars.tex'
