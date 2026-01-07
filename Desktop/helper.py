@@ -46,19 +46,18 @@ def get_serial_ports():
 
 def wait_for_esp_measurement(port):
     measure_finished = False
-    try:
-        ser = serial.Serial(port, 9600)
-        while True:
-            data = ser.readline().decode('ascii')
-            if data:
-                data = data.strip().rstrip("\n")
-                print(data)
-                if data == "finished":
-                    return "done"
-                else:
-                    return "error while measuring"
-    except:
-        return "connection to device failed"
+    #return "done"
+    #try:
+    ser = serial.Serial(port, 115200)
+    while True:
+        data = ser.readline().decode('ascii')
+        if data:
+            data = data.strip().rstrip("\n")
+            print(data)
+            if data == "finished":
+                return "done"
+    #except:
+    #    return "connection to device failed"
 
 def compile_doc(name, color_one, color_two, send=False):
     latex_document = './tex/vars.tex'
@@ -117,6 +116,7 @@ def cleanup_fs():
         os.remove("tex/face.png")
     if os.path.isfile("captured_image.png"):
         os.remove("captured_image.png")
+    #pass
 
 if __name__ == "__main__":
     cleanup_fs()

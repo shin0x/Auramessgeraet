@@ -201,6 +201,7 @@ class AuraGUI(tk.Tk):
 
             color_one, color_two = get_random_aura_color()
             device_con = wait_for_esp_measurement(self.get_selected_port())
+            #device_con = "done"
             if device_con == "error while measuring" or device_con == "connection to device failed":
                 print("Something went wrong while measuring, please retry")
             elif device_con == "done":
@@ -208,14 +209,15 @@ class AuraGUI(tk.Tk):
 
                 if self.mail_enabled.get() and email:
                     send_mail(email, "Deine Auramessung",
-                              "Hallo! Im Anhang kannst du deine Auramessung einsehen!",
+                              "Hallo!\nIm Anhang kannst du deine Auramessung einsehen!\nGaLiGrü Dein Auramessungsteam",
                               files=[f"Measurements/{filename}"])
-                #self._notify(lambda: messagebox.showinfo("Fertig", "Auradokument erstellt."))
+                self._notify(lambda: messagebox.showinfo("Fertig", "Auradokument erstellt."))
+                self._notify(lambda: self.shutter_button.configure(state=tk.NORMAL, text="CONNECT"))
                 cleanup_fs()
         except Exception as exc:
             self._notify(lambda: messagebox.showerror("Fehler", str(exc)))
         finally:
-            self._notify(lambda: self.shutter_button.configure(state=tk.NORMAL, text="ENGAGE"))
+            self._notify(lambda: self.shutter_button.configure(state=tk.NORMAL, text="CONNECT"))
 
     def _notify(self, func):
         self.after(0, func)
